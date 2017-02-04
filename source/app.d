@@ -1,6 +1,23 @@
 import std.stdio;
+import syntax.Visitor;
+import ast.Program;
+import utils.WilyException;
 
-void main()
+int main(string[] args)
 {
-	writeln("Edit source/app.d to start your project.");
+
+    if (args.length < 2) {
+	writeln ("File name expected !");
+	return -1;
+    }
+
+    try {
+	Visitor visitor = new Visitor (args[1]);
+	Program program = visitor.visit ();
+	program.print ();
+    } catch (WilyException e) {
+	e.print ();
+    }
+
+    return 0;
 }

@@ -51,9 +51,14 @@ class Visitor {
 	    else if (next != Keys.PROC) throw new SyntaxError (next, [Keys.BEGIN.descr, Keys.PROC.descr]);
 	}
 
+	if (next != Keys.BEGIN) throw new SyntaxError (next, [Keys.BEGIN.descr]);
+	next = _lex.next ();
+
 	while (next == Keys.INT || next == Keys.BOOL) {
 	    begins.insertBack (visitVarDecl (next));
 	    next = _lex.next ();
+	    if (next != Keys.INT && next != Keys.BOOL)
+		_lex.rewind ();
 	}
 
 	while (true) {
@@ -178,11 +183,25 @@ class Visitor {
     }
 
     /**
-     block := '{' instruction* '}'
-             | instruction
-     */
+       block := '{' instruction* '}'
+       | instruction
+    */
     private Block visitBlock () {
-	return null;
+	auto par = _lex.next ();
+	Array!Instruction insts;
+	while (true) {
+	    auto next = _lex.next ();
+	    if (next == Keys.IF) insts.insertBack (visitIf ());
+	    else if (next == Keys.WHILE) insts.insertBack (visitWhile ());
+	    else if (next == Keys.CALL) insts.insertBack (visitCall ());
+	    else if (next == Keys.SKIP) insts.insertBack (visitSkip ());
+	    else if (next == Tokens.RPAR) break;
+	    else {
+		_lex.rewind ();
+		insts.insertBack (visitExpressionUlt ());
+	    }
+	}
+	return new Block (par, insts);
     }
 
     private Instruction visitInstruction () {
@@ -197,6 +216,8 @@ class Visitor {
 	auto tok = _lex.next ();
 	if (tok != Tokens.AFFECT) throw new SyntaxError (tok, [Tokens.AFFECT.descr]);
 	auto right = visitExpression ();
+	auto next = _lex.next ();
+	if (next != Tokens.SEMI_COLON) throw new SyntaxError (next, [Tokens.SEMI_COLON.descr]);
 	return new Affect (tok, left, right);
     }    
 
@@ -246,6 +267,7 @@ class Visitor {
 	    if (tok != Tokens.RPAR) throw new SyntaxError (tok, [Tokens.RPAR.descr]);
 	    return expr;
 	} else {
+	    _lex.rewind ();
 	    auto cst = visitConstante ();
 	    if (cst is null) {
 		return visitVar ();
@@ -288,21 +310,8 @@ class Visitor {
 	if (next != Tokens.RPAR) throw new SyntaxError (next, [Tokens.RPAR.descr]);
 	next = _lex.next ();
 	if (next != Tokens.LPAR) throw new SyntaxError (next, [Tokens.LPAR.descr]);
-	auto par_block_if = next;
-	Array!Instruction insts;
-	while (true) {
-	    next = _lex.next ();
-	    if (next == Keys.IF) insts.insertBack (visitIf ());
-	    else if (next == Keys.WHILE) insts.insertBack (visitWhile ());
-	    else if (next == Keys.CALL) insts.insertBack (visitCall ());
-	    else if (next == Keys.SKIP) insts.insertBack (visitSkip ());
-	    else if (next == Tokens.RPAR) break;
-	    else {
-		_lex.rewind ();
-		insts.insertBack (visitExpressionUlt ());
-	    }
-	}
-	block_if = new Block (par_block_if, insts);
+	_lex.rewind ();
+	block_if = visitBlock ();
 	
 	next = _lex.next ();
 	if (next != Keys.ELSE) {
@@ -318,21 +327,9 @@ class Visitor {
 	auto id = _lex.next ();
 	auto next = _lex.next ();
 	if (next != Tokens.LPAR) throw new SyntaxError (next, [Tokens.LPAR.descr]);
-	auto par_block = next;
-	Array!Instruction insts;
-	while (true) {
-	    next = _lex.next ();
-	    if (next == Keys.IF) insts.insertBack (visitIf ());
-	    else if (next == Keys.WHILE) insts.insertBack (visitWhile ());
-	    else if (next == Keys.CALL) insts.insertBack (visitCall ());
-	    else if (next == Keys.SKIP) insts.insertBack (visitSkip ());
-	    else if (next == Tokens.RPAR) break;
-	    else {
-		_lex.rewind ();
-		insts.insertBack (visitExpressionUlt ());
-	    }
-	}
-	return new Else (id, new Block (par_block, insts));
+	_lex.rewind ();
+	Block block = visitBlock ();
+	return new Else (id, block);
     }    
     
     private Instruction visitSkip () {
@@ -356,21 +353,8 @@ class Visitor {
 	if (next != Keys.DO) throw new SyntaxError (next, [Keys.DO.descr]);
 	next = _lex.next ();
 	if (next != Tokens.LPAR) throw new SyntaxError (next, [Tokens.LPAR.descr]);
-	auto par_block = next;
-	Array!Instruction insts;
-	while (true) {
-	    next = _lex.next ();
-	    if (next == Keys.IF) insts.insertBack (visitIf ());
-	    else if (next == Keys.WHILE) insts.insertBack (visitWhile ());
-	    else if (next == Keys.CALL) insts.insertBack (visitCall ());
-	    else if (next == Keys.SKIP) insts.insertBack (visitSkip ());
-	    else if (next == Tokens.RPAR) break;
-	    else {
-		_lex.rewind ();
-		insts.insertBack (visitExpressionUlt ());
-	    }
-	}
-	block = new Block (par_block, insts);
+	_lex.rewind ();
+	block = visitBlock ();
 
 	return new While (id, expr, block);
     }

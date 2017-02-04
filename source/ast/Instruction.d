@@ -13,5 +13,6 @@ class Instruction {
     Word token () {
 	return this._token;
     }       
-    
+
+    void print (int nb = 0) {}
 }

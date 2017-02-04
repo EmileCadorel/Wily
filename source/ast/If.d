@@ -2,6 +2,7 @@ module ast.If;
 import ast.Instruction;
 import syntax.Word, ast.Block;
 import ast.Expression;
+import std.stdio, std.string;
 
 class If : Instruction {
 
@@ -15,6 +16,18 @@ class If : Instruction {
 	this._block = block;
 	this._else = _else;
     }   
+
+    override void print (int nb = 0) {
+	writefln ("%s<If> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+		  this._token.locus.file,
+		  this._token.locus.line, 
+		  this._token.locus.column,
+		  this._token.str);
+	
+	this._block.print (nb + 4);
+	if (this._else)
+	    this._else.print (nb + 4);
+    }    
 }
 
 class Else : Instruction {
@@ -24,4 +37,15 @@ class Else : Instruction {
 	super (token);
 	this._block = block;
     }   
+
+    override void print (int nb = 0) {
+	writefln ("%s<Else> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+		  this._token.locus.file,
+		  this._token.locus.line, 
+		  this._token.locus.column,
+		  this._token.str);
+	
+	this._block.print (nb + 4);
+    }    
+
 }

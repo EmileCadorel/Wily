@@ -6,4 +6,6 @@ class Expression : Instruction {
     this (Word token) {
 	super (token);
     }    
+
+    override void print (int nb = 0) {}
 }
