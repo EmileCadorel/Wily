@@ -11,3 +11,4 @@ public import ast.Binary;
 public import ast.VarDecl;
 public import ast.Call;
 public import ast.Constante;
+public import ast.Skip;

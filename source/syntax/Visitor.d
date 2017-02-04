@@ -130,6 +130,7 @@ class Visitor {
 	    if (next == Keys.IF) insts.insertBack (visitIf ());
 	    else if (next == Keys.WHILE) insts.insertBack (visitWhile ());
 	    else if (next == Keys.CALL) insts.insertBack (visitCall ());
+	    else if (next == Keys.SKIP) insts.insertBack (visitSkip ());
 	    else if (next == Keys.END) break;
 	    else {
 		_lex.rewind ();
@@ -273,19 +274,105 @@ class Visitor {
     }    
     
     private Instruction visitIf () {
-	return null;
+	_lex.rewind ();
+	auto id = _lex.next ();
+
+	Expression expr = null;
+	Block block_if = null;
+	Else block_else = null;
+
+	auto next = _lex.next ();
+	if (next != Tokens.LPAR) throw new SyntaxError (next, [Tokens.LPAR.descr]);
+	expr = visitExpression ();
+	next = _lex.next ();
+	if (next != Tokens.RPAR) throw new SyntaxError (next, [Tokens.RPAR.descr]);
+	next = _lex.next ();
+	if (next != Tokens.LPAR) throw new SyntaxError (next, [Tokens.LPAR.descr]);
+	auto par_block_if = next;
+	Array!Instruction insts;
+	while (true) {
+	    next = _lex.next ();
+	    if (next == Keys.IF) insts.insertBack (visitIf ());
+	    else if (next == Keys.WHILE) insts.insertBack (visitWhile ());
+	    else if (next == Keys.CALL) insts.insertBack (visitCall ());
+	    else if (next == Keys.SKIP) insts.insertBack (visitSkip ());
+	    else if (next == Tokens.RPAR) break;
+	    else {
+		_lex.rewind ();
+		insts.insertBack (visitExpressionUlt ());
+	    }
+	}
+	block_if = new Block (par_block_if, insts);
+	
+	next = _lex.next ();
+	if (next != Keys.ELSE) {
+	    _lex.rewind ();
+	} else {
+	    block_else = visitElse ();
+	}
+	return new If (id, expr, block_if, block_else);
     }
 
     private Else visitElse () {
-	return null;
+	_lex.rewind ();
+	auto id = _lex.next ();
+	auto next = _lex.next ();
+	if (next != Tokens.LPAR) throw new SyntaxError (next, [Tokens.LPAR.descr]);
+	auto par_block = next;
+	Array!Instruction insts;
+	while (true) {
+	    next = _lex.next ();
+	    if (next == Keys.IF) insts.insertBack (visitIf ());
+	    else if (next == Keys.WHILE) insts.insertBack (visitWhile ());
+	    else if (next == Keys.CALL) insts.insertBack (visitCall ());
+	    else if (next == Keys.SKIP) insts.insertBack (visitSkip ());
+	    else if (next == Tokens.RPAR) break;
+	    else {
+		_lex.rewind ();
+		insts.insertBack (visitExpressionUlt ());
+	    }
+	}
+	return new Else (id, new Block (par_block, insts));
     }    
     
     private Instruction visitSkip () {
-	return new Skip ();
+	_lex.rewind ();
+	return new Skip (_lex.next ());
     }
 
     private Instruction visitWhile () {
-	return null;
+	_lex.rewind ();
+	auto id = _lex.next ();
+	
+	Expression expr;
+	Block block;
+	
+	auto next = _lex.next ();
+	if (next != Tokens.LPAR) throw new SyntaxError (next, [Tokens.LPAR.descr]);
+	expr = visitExpression ();
+	next = _lex.next ();
+	if (next != Tokens.RPAR) throw new SyntaxError (next, [Tokens.RPAR.descr]);
+	next = _lex.next ();
+	if (next != Keys.DO) throw new SyntaxError (next, [Keys.DO.descr]);
+	next = _lex.next ();
+	if (next != Tokens.LPAR) throw new SyntaxError (next, [Tokens.LPAR.descr]);
+	auto par_block = next;
+	Array!Instruction insts;
+	while (true) {
+	    next = _lex.next ();
+	    if (next == Keys.IF) insts.insertBack (visitIf ());
+	    else if (next == Keys.WHILE) insts.insertBack (visitWhile ());
+	    else if (next == Keys.CALL) insts.insertBack (visitCall ());
+	    else if (next == Keys.SKIP) insts.insertBack (visitSkip ());
+	    else if (next == Tokens.RPAR) break;
+	    else {
+		_lex.rewind ();
+		insts.insertBack (visitExpressionUlt ());
+	    }
+	}
+	block = new Block (par_block, insts);
+
+	return new While (id, expr, block);
     }
         
 }
