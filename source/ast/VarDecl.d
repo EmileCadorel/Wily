@@ -14,7 +14,7 @@ class VarDecl : Instruction {
     }
 
     override void print (int nb = 0) {
-	writefln ("%s<VarDecl> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+	writef ("%s<VarDecl> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
 		  this._token.locus.file,
 		  this._token.locus.line, 
 		  this._token.locus.column,
@@ -22,5 +22,6 @@ class VarDecl : Instruction {
 
 	foreach (it ; this._names)
 	    writef ("%s ", it.str ());
+	writeln ();
     }        
 }

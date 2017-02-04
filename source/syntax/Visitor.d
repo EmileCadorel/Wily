@@ -22,7 +22,7 @@ class Visitor {
 			       [Tokens.SPACE, Tokens.RETOUR, Tokens.RRETOUR, Tokens.TAB],
 			       []);	
 	this._expOp = [];	
-	this._highOp = [];	
+	this._highOp = [Tokens.PLUS, Tokens.MINUS];	
 	this._suiteElem = [];
 	this._forbiddenIds = [];
     }
@@ -217,7 +217,7 @@ class Visitor {
 	if (tok != Tokens.AFFECT) throw new SyntaxError (tok, [Tokens.AFFECT.descr]);
 	auto right = visitExpression ();
 	auto next = _lex.next ();
-	if (next != Tokens.SEMI_COLON) throw new SyntaxError (next, [Tokens.SEMI_COLON.descr]);
+	if (next != Tokens.SEMI_COLON) _lex.rewind ();
 	return new Affect (tok, left, right);
     }    
 
