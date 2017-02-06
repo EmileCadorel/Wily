@@ -16,7 +16,7 @@ int main(string[] args)
 	Program program = visitor.visit ();
 	program.print ();
     } catch (WilyException e) {
-	e.print ();
+	writeln (e);
     }
 
     return 0;

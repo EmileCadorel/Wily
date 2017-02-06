@@ -5,13 +5,14 @@ import syntax.Tokens, syntax.SyntaxError;
 import std.stdio, std.outbuffer;
 import ast.all, std.container;
 import std.algorithm, std.conv;
-import std.math;
+import std.math, std.traits;
 
 class Visitor {
 
 
     private Lexer _lex;
     private Token[] _expOp;
+    private Token[] _lowOp;
     private Token[] _highOp;
 
     private Token[] _suiteElem;
@@ -21,10 +22,11 @@ class Visitor {
 	this._lex = new Lexer (file,
 			       [Tokens.SPACE, Tokens.RETOUR, Tokens.RRETOUR, Tokens.TAB],
 			       []);	
-	this._expOp = [];	
-	this._highOp = [Tokens.PLUS, Tokens.MINUS];	
+	this._expOp = [Tokens.INF, Tokens.INF_EQ, Tokens.SUP, Tokens.SUP_EQ, Tokens.DIFF, Tokens.EQUALS];
+	this._lowOp = [Tokens.PLUS, Tokens.MINUS];
+	this._highOp = [Tokens.DIV, Tokens.STAR];	
 	this._suiteElem = [];
-	this._forbiddenIds = [];
+	this._forbiddenIds = [EnumMembers!Keys];
     }
 
     /**
@@ -204,10 +206,6 @@ class Visitor {
 	return new Block (par, insts);
     }
 
-    private Instruction visitInstruction () {
-	return null;
-    }
-
     /**
      expressionult := expression (_ultimeop expression)*
      */
@@ -222,10 +220,10 @@ class Visitor {
     }    
 
     private Expression visitExpression () {
-	auto left = visitHigh ();
+	auto left = visitLow ();
 	auto tok = _lex.next ();
 	if (find!"b == a" (_expOp, tok) != []) {
-	    auto right = visitHigh ();
+	    auto right = visitLow ();
 	    return visitExpression (new Binary (tok, left, right));
 	} else _lex.rewind ();
 	return left;
@@ -234,8 +232,27 @@ class Visitor {
     private Expression visitExpression (Expression left) {
 	auto tok = _lex.next ();
 	if (find!"b == a" (_expOp, tok) != []) {
-	    auto right = visitHigh ();
+	    auto right = visitLow ();
 	    return visitExpression (new Binary (tok, left, right));
+	} else _lex.rewind ();
+	return left;
+    }
+
+    private Expression visitLow () {
+	auto left = visitHigh ();
+	auto tok = _lex.next ();
+	if (find!"b == a" (_lowOp, tok) != []) {
+	    auto right = visitHigh ();
+	    return visitLow (new Binary (tok, left, right));
+	} else _lex.rewind ();
+	return left;
+    }
+
+    private Expression visitLow (Expression left) {
+	auto tok = _lex.next ();
+	if (find!"b == a" (_lowOp, tok) != []) {
+	    auto right = visitHigh ();
+	    return visitLow (new Binary (tok, left, right));
 	} else _lex.rewind ();
 	return left;
     }

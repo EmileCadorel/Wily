@@ -20,7 +20,7 @@ enum Tokens : Token {
     INF_EQ = Token ("<=", 13),
     SUP = Token (">", 14),
     SUP_EQ = Token (">=", 15),
-    EQUAL = Token ("=", 16),
+    EQUALS = Token ("=", 16),
     DIFF = Token ("<>", 17),
     AFFECT = Token (":=", 18),
     SEMI_COLON = Token (";", 19),
