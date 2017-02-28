@@ -20,6 +20,23 @@ class Program {
 
     }
 
+    Word id () {
+	return this._id;
+    }
+
+    Array!Function decls () {
+	return this._decls;
+    }
+
+    Array!Instruction vars () {
+	return this._vars;
+    }
+
+    Array!Instruction begins () {
+	return this._begins;
+    }
+    
+    
     void print (int nb = 0) {
 	writefln ("%s<Program> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
 		  this._id.locus.file,

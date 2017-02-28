@@ -21,7 +21,8 @@ class Visitor {
     this (string file) {
 	this._lex = new Lexer (file,
 			       [Tokens.SPACE, Tokens.RETOUR, Tokens.RRETOUR, Tokens.TAB],
-			       []);	
+			       []);
+	
 	this._expOp = [Tokens.INF, Tokens.INF_EQ, Tokens.SUP, Tokens.SUP_EQ, Tokens.DIFF, Tokens.EQUALS];
 	this._lowOp = [Tokens.PLUS, Tokens.MINUS];
 	this._highOp = [Tokens.DIV, Tokens.STAR];	
