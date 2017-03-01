@@ -7,7 +7,7 @@ import std.container, std.conv;
 +/
 class Visitor {
 
-    final public Program visit (Program prg) {
+    final Program opCall (Program prg) {
 	Array!Function funcs;
 	Array!Instruction vars;
 	Array!Instruction block;
@@ -27,19 +27,21 @@ class Visitor {
 	return new Program (prg.id, funcs, vars, block);
     }
 
-    abstract Function visit (Function);    
+    abstract protected Function visit (Function);    
     
     final protected Instruction visit (Instruction inst) {
 	if (auto _if = cast (If) inst) return visitIf (_if);
 	else if (auto _while = cast (While) inst) return visitWhile (_while);
 	else if (auto _call = cast (Call) inst) return visitCall (_call);
 	else if (auto _expr = cast (Expression) inst) return visit (_expr);
+	else if (auto _var = cast (VarDecl) inst) return visitVarDecl (_var);
 	else assert (false, typeid(inst).toString);
     }
 
-    abstract Instruction visitIf (If);
-    abstract Instruction visitWhile (While);
-    abstract Instruction visitCall (Call);
+    abstract protected Instruction visitIf (If);
+    abstract protected Instruction visitWhile (While);
+    abstract protected Instruction visitCall (Call);
+    abstract protected Instruction visitVarDecl (VarDecl);
     
     final protected Expression visit (Expression expr) {
 	if (auto _aff = cast (Affect) expr) return visitAffect (_aff);
@@ -97,14 +99,14 @@ class Visitor {
 	else assert (false, typeid (where).toString);
     }    
     
-    private static bool containInAffect (Affect aff, Expression what) {
+    final private static bool containInAffect (Affect aff, Expression what) {
 	if (equals (aff, what)) {
 	    return true;
 	} else return Visitor.contain (aff.left, what) ||
 		   Visitor.contain (aff.right, what);
     }
 
-    private static bool containInBinary (Binary bin, Expression what) {
+    final private static bool containInBinary (Binary bin, Expression what) {
 	if (equals (bin, what)) {
 	    return true;
 	} else return Visitor.contain (bin.left, what) ||
@@ -112,15 +114,15 @@ class Visitor {
 	    	
     }
     
-    private static bool containInVar (Var aff, Expression what) {
+    final private static bool containInVar (Var aff, Expression what) {
 	if (equals (aff, what)) return true;
 	return false;
     }
     
     
-    abstract Expression visitAffect (Affect);
-    abstract Expression visitBinary (Binary);
-    abstract Expression visitVar (Var);
-    abstract Expression visitInt (Int);
-    abstract Expression visitBool (Bool);    
+    abstract protected Expression visitAffect (Affect);
+    abstract protected Expression visitBinary (Binary);
+    abstract protected Expression visitVar (Var);
+    abstract protected Expression visitInt (Int);
+    abstract protected Expression visitBool (Bool);    
 }

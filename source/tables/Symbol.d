@@ -39,7 +39,6 @@ class SymbolTable {
     Symbol getSymbol (string name) {
 	return _currentScope.getSymbol (name);
     }
-
 }
 
 class Symbol {
