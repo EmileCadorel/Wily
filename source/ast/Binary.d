@@ -21,8 +21,17 @@ class Affect : Expression {
 		  this._token.locus.column,
 		  this._token.str);
 	this._left.print (nb + 4);
-	this._right.print (nb + 4);
+	this._right.print (nb + 4);	
     }
+
+    Expression left () {
+	return this._left;
+    }
+
+    Expression right () {
+	return this._right;
+    }
+    
 }
 
 class Binary : Expression {
@@ -46,4 +55,13 @@ class Binary : Expression {
 	this._left.print (nb + 4);
 	this._right.print (nb + 4);
     }
+
+    Expression left () {
+	return this._left;
+    }
+
+    Expression right () {
+	return this._right;
+    }
+    
 }

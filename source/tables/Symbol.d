@@ -2,6 +2,8 @@ module tables.Symbol;
 import utils.Singleton;
 import tables.FrameScope;
 import syntax.Word;
+import utils.Colors;
+import std.stdio;
 
 enum ubyte BOOL = 0;
 enum ubyte INT = 1;
@@ -39,6 +41,8 @@ class SymbolTable {
     }
 
     unittest {
+	immutable string fail = Colors.RED.value ~ "Test Symbol fail" ~ Colors.RESET.value;
+	
 	SymbolTable table = SymbolTable.instance;
 	Word w = Word (Location (0, 0, 1, "test", true), "a");
 	Word w2 = Word (Location (0, 0, 1, "test", true), "b");
@@ -49,21 +53,22 @@ class SymbolTable {
 	Symbol s = table.getSymbol ("a");
 	assert (s !is null);
 	assert (s.word.str == s1.word.str);
-	assert (table.getSymbol ("b") is null);
+	assert (table.getSymbol ("b") is null, fail);
 	table.addSymbol (s2);
-	assert (table.getSymbol ("b") !is null);
-	assert (table.getSymbol ("b").word.str == s2.word.str);
+	assert (table.getSymbol ("b") !is null, fail);
+	assert (table.getSymbol ("b").word.str == s2.word.str, fail);
 
 	table.enterScope ();
-	assert (table.getSymbol ("b") !is null);
-	assert (table.getSymbol ("b").word.str == s2.word.str);
+	assert (table.getSymbol ("b") !is null, fail);
+	assert (table.getSymbol ("b").word.str == s2.word.str, fail);
 	Word w3 = Word (Location (0, 0, 1, "test", true), "c");
 	Symbol s3 = new Symbol (w3, BOOL);
 	table.addSymbol (s3);
-	assert (table.getSymbol ("c") !is null);
-	assert (table.getSymbol ("c").word.str == s3.word.str);
+	assert (table.getSymbol ("c") !is null, fail);
+	assert (table.getSymbol ("c").word.str == s3.word.str, fail);
 	table.exitScope ();
-	assert (table.getSymbol ("c") is null);
+	assert (table.getSymbol ("c") is null, fail);
+	writeln (Colors.GREEN.value, "Test Symbol table pass", Colors.RESET.value);
     }
 }
 
