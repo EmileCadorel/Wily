@@ -3,6 +3,7 @@ import utils.Singleton;
 import tables.FrameScope;
 import syntax.Word;
 import utils.Colors;
+import std.container;
 import std.stdio;
 
 enum ubyte BOOL = 0;
@@ -16,59 +17,27 @@ alias TYPE = ubyte;
 class SymbolTable {
     mixin Singleton!SymbolTable;
 
-    private FrameScope _currentScope;
+    private SList!FrameScope _currentScope;
 
     private this () {
-	_currentScope = new FrameScope ();
+	_currentScope.insertFront(new FrameScope ());
     }
 
     void enterScope () {
-	FrameScope newScope = new FrameScope (_currentScope);
-	_currentScope = newScope;
+	this._currentScope.insertFront (new FrameScope);
     }
 
     void exitScope () {
-	if (_currentScope)
-	    _currentScope = _currentScope.parent ();
+	if (!_currentScope.empty)
+	    _currentScope.removeFront ();
     }
 
     void addSymbol (Symbol s) {
-	_currentScope.addSymbol (s);
+	_currentScope.front.addSymbol (s);
     }
 
     Symbol getSymbol (string name) {
-	return _currentScope.getSymbol (name);
-    }
-
-    unittest {
-	immutable string fail = Colors.RED.value ~ "Test Symbol fail" ~ Colors.RESET.value;
-	
-	SymbolTable table = SymbolTable.instance;
-	Word w = Word (Location (0, 0, 1, "test", true), "a");
-	Word w2 = Word (Location (0, 0, 1, "test", true), "b");
-	Symbol s1 = new Symbol (w, BOOL);
-	Symbol s2 = new Symbol (w2, INT);
-
-	table.addSymbol (s1);
-	Symbol s = table.getSymbol ("a");
-	assert (s !is null);
-	assert (s.word.str == s1.word.str);
-	assert (table.getSymbol ("b") is null, fail);
-	table.addSymbol (s2);
-	assert (table.getSymbol ("b") !is null, fail);
-	assert (table.getSymbol ("b").word.str == s2.word.str, fail);
-
-	table.enterScope ();
-	assert (table.getSymbol ("b") !is null, fail);
-	assert (table.getSymbol ("b").word.str == s2.word.str, fail);
-	Word w3 = Word (Location (0, 0, 1, "test", true), "c");
-	Symbol s3 = new Symbol (w3, BOOL);
-	table.addSymbol (s3);
-	assert (table.getSymbol ("c") !is null, fail);
-	assert (table.getSymbol ("c").word.str == s3.word.str, fail);
-	table.exitScope ();
-	assert (table.getSymbol ("c") is null, fail);
-	writeln (Colors.GREEN.value, "Test Symbol table pass", Colors.RESET.value);
+	return _currentScope.front.getSymbol (name);
     }
 }
 

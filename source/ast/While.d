@@ -16,7 +16,7 @@ class While : Instruction {
     }
 
     override void print (int nb = 0) {
-	writefln ("%s<VarDecl> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+	writefln ("%s<While> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
 		  this._token.locus.file,
 		  this._token.locus.line, 
 		  this._token.locus.column,

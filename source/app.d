@@ -2,6 +2,7 @@ import std.stdio;
 import syntax.Visitor;
 import ast.Program;
 import utils.WilyException;
+import dispo = analyse.disponible.Visitor;
 
 void main(string[] args) {
     try {
@@ -11,6 +12,10 @@ void main(string[] args) {
     	Visitor visitor = new Visitor (args[1]);
     	Program program = visitor.visit ();
     	program.print ();
+
+	auto dVisit = new dispo.Visitor ();
+	auto res = dVisit (program);
+	
     } catch (WilyException e) {
     	writeln (e);
     } catch (Exception e) {
