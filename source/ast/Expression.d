@@ -7,6 +7,5 @@ class Expression : Instruction {
 	super (token);
     }    
 
-   
     override void print (int nb = 0) {}
 }

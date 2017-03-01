@@ -124,31 +124,3 @@ class Visitor {
     abstract Expression visitInt (Int);
     abstract Expression visitBool (Bool);    
 }
-
-
-unittest {
-    import std.stdio;
-    import utils.Colors, syntax.Word;
-    import ast.all;
-    
-    immutable string fail = Colors.RED.value ~ "Test Visitor fail" ~ Colors.RESET.value;
-    auto a = Word.eof, b = Word.eof;
-    a.str = "a"; b.str = "b";
-    
-    auto varA = new Var (a), varB = new Var (b);
-    assert (!Visitor.equals (varA, varB), fail);
-    assert (Visitor.equals (varA, varA), fail);
-
-    
-    auto aff = new Affect (Word.eof, varA, varB);
-    assert (Visitor.contain (aff, varA), fail);
-
-    auto binT = Word (Location (0, 0, 1, "", false), "+");
-    auto dec = Word (Location (0, 0, 3, "", false), "123");
-    auto bin = new Binary (binT, varA, varB);
-    
-    auto bin2 = new Binary (binT, bin, new Int (dec));
-    assert (Visitor.contain (bin2, varB), fail);
-
-    writeln (Colors.GREEN.value, "Test Visitor pass", Colors.RESET.value);
-}
