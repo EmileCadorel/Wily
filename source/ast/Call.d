@@ -15,7 +15,8 @@ class Call : Instruction {
     }
     
     override void print (int nb = 0) {
-	writefln ("%s<Call> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+	writefln ("%s<Call:%d> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+		  this.id,
 		  this._token.locus.file,
 		  this._token.locus.line, 
 		  this._token.locus.column,

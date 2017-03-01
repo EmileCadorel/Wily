@@ -15,7 +15,8 @@ class Affect : Expression {
     }
 
     override void print (int nb = 0) {
-	writefln ("%s<Binary> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+	writefln ("%s<Affect:%d> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+		  this.id,
 		  this._token.locus.file,
 		  this._token.locus.line, 
 		  this._token.locus.column,
@@ -47,7 +48,8 @@ class Binary : Expression {
     }    
 
     override void print (int nb = 0) {
-	writefln ("%s<Binary> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+	writefln ("%s<Binary:%d> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+		  this.id,
 		  this._token.locus.file,
 		  this._token.locus.line, 
 		  this._token.locus.column,

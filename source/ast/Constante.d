@@ -10,7 +10,8 @@ class Var : Expression {
     }
 
     override void print (int nb = 0) {
-	writefln ("%s<Var> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+	writefln ("%s<Var:%d> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+		  this.id,
 		  this._token.locus.file,
 		  this._token.locus.line, 
 		  this._token.locus.column,
@@ -25,7 +26,8 @@ class Int : Expression {
     }
 
     override void print (int nb = 0) {
-	writefln ("%s<Int> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+	writefln ("%s<Int:%d> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+		  this.id,
 		  this._token.locus.file,
 		  this._token.locus.line, 
 		  this._token.locus.column,
@@ -39,7 +41,8 @@ class Bool : Expression {
     }
 
     override void print (int nb = 0) {
-	writefln ("%s<Bool> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+	writefln ("%s<Bool:%d> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+		  this.id,
 		  this._token.locus.file,
 		  this._token.locus.line, 
 		  this._token.locus.column,

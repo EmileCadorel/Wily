@@ -20,6 +20,22 @@ class Function {
 	this._insts = insts;				 
     }
 
+    ref Word id () {
+	return this._id;
+    }
+    
+    ref Array!VarDecl params () {
+	return this._params;
+    }
+
+    VarDecl ret () {
+	return this._ret;
+    }
+
+    ref Array!Instruction insts () {
+	return this._insts;
+    }
+    
     void print (int nb = 0) {
 	writefln ("%s<Function> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
 		  this._id.locus.file,

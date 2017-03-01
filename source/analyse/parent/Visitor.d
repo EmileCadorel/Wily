@@ -1,6 +1,8 @@
 module analyse.parent.Visitor;
 import ast.all;
 import std.container, std.conv;
+import tables.Symbol;
+import std.typecons;
 
 /++
 + Ancetre des visiteur des autres analyse statique
@@ -27,7 +29,24 @@ class Visitor {
 	return new Program (prg.id, funcs, vars, block);
     }
 
-    abstract protected Function visit (Function);    
+    final protected Function visit (Function _fun) {
+	SymbolTable.instance.enterScope ();
+	Array!VarDecl params;
+	VarDecl ret;
+	Array!Instruction insts;
+	
+	foreach (it ; _fun.params) 
+	    params.insertBack (visitVarDecl (it));
+	
+	if (_fun.ret)
+	    ret = visitVarDecl (_fun.ret);
+	
+	foreach (it ; _fun.insts) 
+	    insts.insertBack (visit (it));
+	
+	SymbolTable.instance.exitScope ();
+	return new Function (_fun.id, params, ret, insts);
+    }
     
     final protected Instruction visit (Instruction inst) {
 	if (auto _if = cast (If) inst) return visitIf (_if);
@@ -41,7 +60,7 @@ class Visitor {
     abstract protected Instruction visitIf (If);
     abstract protected Instruction visitWhile (While);
     abstract protected Instruction visitCall (Call);
-    abstract protected Instruction visitVarDecl (VarDecl);
+    abstract protected VarDecl visitVarDecl (VarDecl);
     
     final protected Expression visit (Expression expr) {
 	if (auto _aff = cast (Affect) expr) return visitAffect (_aff);
@@ -125,4 +144,106 @@ class Visitor {
     abstract protected Expression visitVar (Var);
     abstract protected Expression visitInt (Int);
     abstract protected Expression visitBool (Bool);    
+
+
+    final protected ulong init (Instruction inst) {
+	if (auto _if = cast (If) inst) return _if.test.id;
+	else if (auto _wh = cast (While) inst) return _wh.test.id;
+	else if (auto _bl = cast (Block) inst) return init(_bl.insts [0]);
+	return inst.id;
+    }
+
+    final protected Array!ulong final_ (Instruction inst) {
+	if (cast (Expression) inst) return make!(Array!ulong) (inst.id);
+	else if (cast (Skip) inst) return make!(Array!ulong) (inst.id);
+	else if (auto _if = cast (If) inst) {
+	    if (_if.else_)
+		return final_ (_if.block) ~ final_ (_if.else_.block); 
+	    else
+		return final_ (_if.block);
+	} else if (auto _wh = cast (While) inst) return make!(Array!ulong) (_wh.test.id);
+	else if (auto _bl = cast (Block) inst) {
+	    if (_bl.insts.length > 0)
+		return final_ (_bl.insts.back ());
+	    else return make!(Array!ulong);
+	} else assert (false, typeid (inst).toString);
+    }
+
+    final protected Array!ulong labels (Instruction inst) {
+	if (cast (Expression) inst) return make!(Array!ulong)(inst.id);
+	else if (cast (Skip) inst) return make!(Array!ulong) (inst.id);
+	else if (auto _if = cast (If) inst) {
+	    if (_if.else_)
+		return make!(Array!ulong) (_if.test.id) ~ labels (_if.block) ~ labels (_if.else_.block);
+	    else
+		return make!(Array!ulong) (_if.test.id) ~ labels (_if.block);	    
+	} else if (auto _wh = cast (While) inst)
+	    return make!(Array!ulong) (_wh.test.id) ~ labels (_wh.block);
+	else if (auto _bl = cast (Block) inst) {
+	    Array!ulong lab;
+	    foreach (it ; _bl.insts) {
+		lab ~= labels (it);
+	    }
+	    return lab;
+	} else assert (false, typeid (inst).toString);		
+    }
+
+    alias Pair = Tuple!(ulong, ulong);
+    
+    final protected Array!(Pair) flow (Instruction inst) {
+	if (cast (Expression) inst) return make!(Array!Pair);
+	else if (cast (Skip) inst) return make!(Array!Pair);
+	else if (auto _bl = cast (Block) inst) {
+	    Array!Pair fin;
+	    if (_bl.insts.length > 1) {
+		foreach (it ; 0 .. _bl.insts.length - 1) {
+		    fin ~= flow (_bl.insts [it]);
+		    fin ~= flow (_bl.insts [it + 1]);
+		    auto i = init (_bl.insts [it + 1]);
+		    auto f = final_ (_bl.insts [it]);
+		    foreach (l ; f) {
+			fin.insertBack (Pair (l, i));
+		    }		    
+		}
+		return fin;
+	    } else if (_bl.insts.length == 1) return flow (_bl.insts [0]);
+	    else return make!(Array!Pair);
+	} else if (auto _wh = cast (While) inst) {
+	    Array!Pair fin;
+	    fin ~= flow (_wh.block);
+	    fin.insertBack (Pair (_wh.test.id, init (_wh.block)));
+	    auto f = final_ (_wh.block);
+	    foreach (l_ ; f) {
+		fin.insertBack (Pair (l_, _wh.test.id));
+	    }
+	    return fin;
+	} else if (auto _if = cast (If) inst) {
+	    Array!Pair fin;
+	    fin ~= flow (_if.block);
+	    fin.insertBack (Pair (_if.test.id, init (_if.block)));
+	    if (_if.else_) {
+		fin ~= flow (_if.else_.block);
+		fin.insertBack (Pair (_if.test.id, init(_if.else_.block)));
+	    }
+	    return fin;
+	} else assert (false, typeid (inst).toString);
+    }
+    
+    final protected Array!Expression blocks (Instruction inst) {
+	if (auto _exp = cast (Expression) inst) return make!(Array!Expression) (_exp);
+	else if (auto _sk = cast (Skip) inst) return make!(Array!Expression);
+	else if (auto _bl = cast (Block) inst) {
+	    Array!Expression fin;
+	    foreach (it ; _bl.insts)
+		fin ~= blocks (it);
+	    return fin;
+	} else if (auto _if = cast (If) inst) {
+	    if (_if.else_) 
+		return make!(Array!Expression) (_if.test) ~ blocks (_if.block) ~ blocks (_if.else_.block);
+	    else 
+		return make!(Array!Expression) (_if.test) ~ blocks (_if.block);
+	} else if (auto _wh = cast (While) inst) {
+	    return make!(Array!Expression) (_wh.test) ~ blocks (_wh.block);
+	} else assert (false, typeid (inst).toString);	           
+    }   
 }

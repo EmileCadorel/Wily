@@ -17,6 +17,18 @@ class If : Instruction {
 	this._else = _else;
     }   
 
+    Expression test () {
+	return this._test;
+    }
+
+    Else else_ () {
+	return this._else;
+    }
+    
+    Block block () {
+	return this._block;
+    }
+    
     override void print (int nb = 0) {
 	writefln ("%s<If> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
 		  this._token.locus.file,
@@ -38,6 +50,10 @@ class Else : Instruction {
 	this._block = block;
     }   
 
+    Block block () {
+	return this._block;
+    }
+    
     override void print (int nb = 0) {
 	writefln ("%s<Else> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
 		  this._token.locus.file,

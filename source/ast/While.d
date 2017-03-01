@@ -15,8 +15,17 @@ class While : Instruction {
 	this._block = block;
     }
 
+    Expression test () {
+	return this._test;
+    }
+
+    Block block () {
+	return this._block;
+    }
+    
     override void print (int nb = 0) {
-	writefln ("%s<While> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+	writefln ("%s<While:%d> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+		  this.id,
 		  this._token.locus.file,
 		  this._token.locus.line, 
 		  this._token.locus.column,

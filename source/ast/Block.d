@@ -12,8 +12,13 @@ class Block : Instruction {
 	this._insts = insts;
     }
 
+    ref Array!Instruction insts () {
+	return this._insts;
+    }
+    
     override void print (int nb = 0) {
-	writefln ("%s<Block> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+	writefln ("%s<Block:%d> : %s(%d, %d) %s ", rightJustify ("", nb, ' '),
+		  this.id,
 		  this._token.locus.file,
 		  this._token.locus.line, 
 		  this._token.locus.column,
