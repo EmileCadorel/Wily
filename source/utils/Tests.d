@@ -24,8 +24,8 @@ unittest {
     assert (table.getSymbol ("b").word.str == s2.word.str, fail);
 
     table.enterScope ();
-    assert (table.getSymbol ("b") !is null, fail);
-    assert (table.getSymbol ("b").word.str == s2.word.str, fail);
+    assert (table.getSymbol ("b") is null, fail);
+    
     Word w3 = Word (Location (0, 0, 1, "test", true), "c");
     Symbol s3 = new Symbol (w3, BOOL);
     table.addSymbol (s3);

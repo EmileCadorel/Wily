@@ -3,6 +3,7 @@ import utils.Singleton;
 import tables.FrameScope;
 import syntax.Word;
 import utils.Colors;
+import std.container;
 import std.stdio;
 
 enum ubyte BOOL = 0;
@@ -16,28 +17,27 @@ alias TYPE = ubyte;
 class SymbolTable {
     mixin Singleton!SymbolTable;
 
-    private FrameScope _currentScope;
+    private SList!FrameScope _currentScope;
 
     private this () {
-	_currentScope = new FrameScope ();
+	_currentScope.insertFront(new FrameScope ());
     }
 
     void enterScope () {
-	FrameScope newScope = new FrameScope (_currentScope);
-	_currentScope = newScope;
+	this._currentScope.insertFront (new FrameScope);
     }
 
     void exitScope () {
-	if (_currentScope)
-	    _currentScope = _currentScope.parent ();
+	if (!_currentScope.empty)
+	    _currentScope.removeFront ();
     }
 
     void addSymbol (Symbol s) {
-	_currentScope.addSymbol (s);
+	_currentScope.front.addSymbol (s);
     }
 
     Symbol getSymbol (string name) {
-	return _currentScope.getSymbol (name);
+	return _currentScope.front.getSymbol (name);
     }
 }
 
