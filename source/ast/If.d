@@ -39,7 +39,27 @@ class If : Instruction {
 	this._block.print (nb + 4);
 	if (this._else)
 	    this._else.print (nb + 4);
-    }    
+    }
+
+    override void prettyPrint (int nb = 0) {
+	writef ("%sif (", rightJustify ("", nb, ' '));
+	this._test.prettyPrint (0);
+	writeln (")");
+	this._block.prettyPrint (nb);
+	if (this._else)
+	    this._else.prettyPrint (nb);
+    }
+
+    override void prettyPrint (OutBuffer buf, int nb = 0) {
+	buf.writef ("%sif (", rightJustify ("", nb, ' '));
+	this._test.prettyPrint (buf, 0);
+	buf.writeln (")");
+	this._block.prettyPrint (buf, nb);
+	if (this._else)
+	    this._else.prettyPrint (buf, nb);
+    }
+
+    
 }
 
 class Else : Instruction {
@@ -64,4 +84,15 @@ class Else : Instruction {
 	this._block.print (nb + 4);
     }    
 
+    override void prettyPrint (int nb = 0) {
+	writef ("%selse", rightJustify ("", nb, ' '));
+	this._block.prettyPrint (nb);	
+    }
+
+
+    override void prettyPrint (OutBuffer buf, int nb = 0) {
+	buf.writef ("%selse", rightJustify ("", nb, ' '));
+	this._block.prettyPrint (buf, nb);	   
+    }
+    
 }

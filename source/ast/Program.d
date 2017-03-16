@@ -52,5 +52,47 @@ class Program {
 
 	foreach (it ; _begins)
 	    it.print (nb + 4);
-    }        
+    }
+
+
+    void prettyPrint (int nb = 0) {
+	foreach (it ; this._decls) {
+	    it.prettyPrint (0);
+	    writeln ();
+	}
+	
+	foreach (it ; this._vars) {
+	    it.prettyPrint (0);
+	    writeln ();
+	}
+
+	writeln ("begin");
+	foreach (it ; this._begins) {
+	    it.prettyPrint (4);
+	    writeln (";");
+	}
+	writeln ("end");
+    }
+    
+    void prettyPrint (OutBuffer buf, int nb = 0) {
+	foreach (it ; this._decls) {
+	    it.prettyPrint (buf, 0);
+	    buf.writeln ();
+	}
+	
+	foreach (it ; this._vars) {
+	    it.prettyPrint (buf, 0);
+	    buf.writeln ();
+	}
+
+	buf.writeln ("begin");
+	foreach (it ; this._begins) {
+	    it.prettyPrint (buf, 4);
+	    buf.writeln (";");
+	}
+	buf.writeln ("end");
+    }
+    
+
+
 }

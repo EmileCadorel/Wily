@@ -17,18 +17,4 @@ class ExpressionTable {
     public ref Array!Expression expr () {
 	return _expr;
     }
-
-    public Array!Expression killAE (Expression expr) {
-	Array!Expression res;
-	foreach (it ; _expr)
-	    if (Visitor.contain (it, expr)) res.insertBack (it);
-	return res;
-    }
-
-    public Array!Expression genAE (Expression expr1, Expression expr2) {
-	Array!Expression res;
-	foreach (it ; _expr)
-	    if (!Visitor.contain (it, expr1) && Visitor.contain (it, expr2)) res.insertBack (it);
-	return res;
-    }
 }

@@ -27,4 +27,23 @@ class Block : Instruction {
 	    it.print (nb + 4);
     }
     
+    override void prettyPrint (int nb = 0) {
+	writefln ("%s(", rightJustify ("", nb, ' '));
+	foreach (it ; this._insts) {
+	    it.prettyPrint (nb + 4);
+	    writefln ("");
+	}
+	writefln ("%s)", rightJustify ("", nb, ' '));	
+    }
+
+    override void prettyPrint (OutBuffer buf, int nb = 0) {
+	buf.writefln ("%s(", rightJustify ("", nb, ' '));
+	foreach (it ; this._insts) {
+	    it.prettyPrint (buf, nb + 4);
+	    buf, writefln ("");
+	}
+	buf.writefln ("%s)", rightJustify ("", nb, ' '));	
+    }
+
+    
 }

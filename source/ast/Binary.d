@@ -2,6 +2,7 @@ module ast.Binary;
 import ast.Expression;
 import syntax.Word;
 import std.stdio, std.string;
+import std.outbuffer;
 
 class Affect : Expression {
 
@@ -25,12 +26,26 @@ class Affect : Expression {
 	this._right.print (nb + 4);	
     }
 
-    Expression left () {
+    ref Expression left () {
 	return this._left;
     }
 
-    Expression right () {
+    ref Expression right () {
 	return this._right;
+    }
+    
+    override void prettyPrint (int nb = 0) {
+	writef ("%s", rightJustify ("", nb, ' '));
+	this._left.prettyPrint (0);
+	write (" := ");
+	this._right.prettyPrint (0);
+    }
+
+    override void prettyPrint (OutBuffer buf, int nb = 0) {
+	buf.writef ("%s", rightJustify ("", nb, ' '));
+	this._left.prettyPrint (buf, 0);
+	buf.write (" := ");
+	this._right.prettyPrint (buf, 0);
     }
     
 }
@@ -58,12 +73,33 @@ class Binary : Expression {
 	this._right.print (nb + 4);
     }
 
-    Expression left () {
+    ref Expression left () {
 	return this._left;
     }
 
-    Expression right () {
+    ref Expression right () {
 	return this._right;
     }
+
+    Word op () {
+	return this._token;
+    }
+    
+    override void prettyPrint (int nb = 0) {
+	writef ("(%s", rightJustify ("", nb, ' '));
+	this._left.prettyPrint (0);
+	writef (" %s ", this._token.str);
+	this._right.prettyPrint (0);
+	write (")");
+    }
+
+    override void prettyPrint (OutBuffer buf, int nb = 0) {
+	buf.writef ("(%s", rightJustify ("", nb, ' '));
+	this._left.prettyPrint (buf, 0);
+	buf.writef (" %s ", this._token.str);
+	this._right.prettyPrint (buf, 0);
+	buf.write (")");
+    }
+
     
 }

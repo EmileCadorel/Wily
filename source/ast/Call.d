@@ -24,4 +24,26 @@ class Call : Instruction {
 	foreach (it ; this._params)
 	    it.print (nb + 4);
     }
+
+    override void prettyPrint (int nb = 0) {
+	writef ("call:%s(", this._token.str);
+	foreach (it ; this._params) {
+	    it.prettyPrint (0);
+	    if (it !is this._params [$ - 1])
+		write (",");
+	}
+	writef (")");
+    }    
+
+    override void prettyPrint (OutBuffer buf, int nb = 0) {
+	buf.writef ("call:%s(", this._token.str);
+	foreach (it ; this._params) {
+	    it.prettyPrint (buf, 0);
+	    if (it !is this._params [$ - 1])
+		buf.write (",");
+	}
+	buf.writef (")");
+    }    
+
 }
+

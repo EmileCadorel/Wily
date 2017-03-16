@@ -2,6 +2,7 @@ module ast.Constante;
 import syntax.Word;
 import ast.Expression;
 import std.stdio, std.string;
+import std.outbuffer;
 
 class Var : Expression {
 
@@ -17,6 +18,15 @@ class Var : Expression {
 		  this._token.locus.column,
 		  this._token.str);
     }
+
+    override void prettyPrint (int nb = 0) {
+	writef ("%s", this._token.str);
+    }
+    
+    override void prettyPrint (OutBuffer buf, int nb = 0) {
+	buf.writef ("%s", this._token.str);
+    }
+    
 }
 
 
@@ -33,6 +43,15 @@ class Int : Expression {
 		  this._token.locus.column,
 		  this._token.str);
     }
+
+    override void prettyPrint (int nb = 0) {
+	writef ("%s", this._token.str);
+    }
+
+    override void prettyPrint (OutBuffer buf, int nb = 0) {
+	buf.writef ("%s", this._token.str);
+    }
+    
 }
 
 class Bool : Expression {
@@ -48,5 +67,13 @@ class Bool : Expression {
 		  this._token.locus.column,
 		  this._token.str);
     }
+    
+    override void prettyPrint (int nb = 0) {
+	writef ("%s", this._token.str);
+    }
 
+    override void prettyPrint (OutBuffer buf, int nb = 0) {
+	buf.writef ("%s", this._token.str);
+    }
+    
 }

@@ -14,5 +14,9 @@ class Expression : Instruction {
 
     override void print (int nb = 0) {}
 
+    override void prettyPrint (int nb = 0) {}
+
+    override void prettyPrint (OutBuffer buf, int nb = 0) {}
+    
     private Symbol _symbol;
 }

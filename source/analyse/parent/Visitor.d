@@ -3,6 +3,8 @@ import ast.all;
 import std.container, std.conv;
 import tables.Symbol;
 import std.typecons;
+import syntax.Word;
+import syntax.Tokens;
 
 /++
 + Ancetre des visiteur des autres analyse statique
@@ -14,63 +16,13 @@ class Visitor {
 	Array!Instruction vars;
 	Array!Instruction block;
 	
-	foreach (it ; prg.decls) {
-	    funcs.insertBack (visit (it));
-	}
-
-	foreach (it ; prg.vars) {
-	    vars.insertBack (visit(it));
-	}
-
-	foreach (it ; prg.begins) {
-	    block.insertBack (visit (it));
-	}
+	analyse (prg);
 
 	return new Program (prg.id, funcs, vars, block);
     }
 
-    final protected Function visit (Function _fun) {
-	SymbolTable.instance.enterScope ();
-	Array!VarDecl params;
-	VarDecl ret;
-	Array!Instruction insts;
-	
-	foreach (it ; _fun.params) 
-	    params.insertBack (visitVarDecl (it));
-	
-	if (_fun.ret)
-	    ret = visitVarDecl (_fun.ret);
-	
-	foreach (it ; _fun.insts) 
-	    insts.insertBack (visit (it));
-	
-	SymbolTable.instance.exitScope ();
-	return new Function (_fun.id, params, ret, insts);
-    }
+    abstract void analyse (Program);
     
-    final protected Instruction visit (Instruction inst) {
-	if (auto _if = cast (If) inst) return visitIf (_if);
-	else if (auto _while = cast (While) inst) return visitWhile (_while);
-	else if (auto _call = cast (Call) inst) return visitCall (_call);
-	else if (auto _expr = cast (Expression) inst) return visit (_expr);
-	else if (auto _var = cast (VarDecl) inst) return visitVarDecl (_var);
-	else assert (false, typeid(inst).toString);
-    }
-
-    abstract protected Instruction visitIf (If);
-    abstract protected Instruction visitWhile (While);
-    abstract protected Instruction visitCall (Call);
-    abstract protected VarDecl visitVarDecl (VarDecl);
-    
-    final protected Expression visit (Expression expr) {
-	if (auto _aff = cast (Affect) expr) return visitAffect (_aff);
-	else if (auto _bin = cast (Binary) expr) return visitBinary (_bin);
-	else if  (auto _var = cast (Var) expr) return visitVar (_var);
-	else if (auto _int = cast (Int) expr) return visitInt (_int);
-	else if (auto _bool = cast (Bool) expr) return visitBool (_bool);
-	else assert (false, typeid(expr).toString);
-    }
-
 
     final private static bool match (T, Fun : bool function (T, T)) (Expression left, Expression right, Fun fun) {
 	auto _le = cast (T) left, _ri = cast (T) right;	
@@ -137,13 +89,6 @@ class Visitor {
 	if (equals (aff, what)) return true;
 	return false;
     }
-    
-    
-    abstract protected Expression visitAffect (Affect);
-    abstract protected Expression visitBinary (Binary);
-    abstract protected Expression visitVar (Var);
-    abstract protected Expression visitInt (Int);
-    abstract protected Expression visitBool (Bool);    
 
 
     final protected ulong init (Instruction inst) {
@@ -188,8 +133,7 @@ class Visitor {
 	} else assert (false, typeid (inst).toString);		
     }
 
-    alias Pair = Tuple!(ulong, ulong);
-    
+    alias Pair = Tuple!(ulong, ulong);    
     final protected Array!(Pair) flow (Instruction inst) {
 	if (cast (Expression) inst) return make!(Array!Pair);
 	else if (cast (Skip) inst) return make!(Array!Pair);
@@ -228,6 +172,23 @@ class Visitor {
 	    return fin;
 	} else assert (false, typeid (inst).toString);
     }
+
+    final protected Array!Pair flow (Program p) {
+	Array!Pair fin;
+	if (p.begins.length > 1) {
+	    foreach (it ; 0 .. p.begins.length - 1) {
+		fin ~= flow (p.begins [it]);
+		fin ~= flow (p.begins [it + 1]);
+		auto i = init (p.begins [it + 1]);
+		auto f = final_ (p.begins [it]);
+		foreach (l_; f) {
+		    fin.insertBack (Pair (l_, i));
+		}
+	    }
+	    return fin;
+	} else if (p.begins.length == 1) return flow (p.begins [0]);
+	else return make!(Array!Pair);
+    }
     
     final protected Array!Expression blocks (Instruction inst) {
 	if (auto _exp = cast (Expression) inst) return make!(Array!Expression) (_exp);
@@ -246,4 +207,25 @@ class Visitor {
 	    return make!(Array!Expression) (_wh.test) ~ blocks (_wh.block);
 	} else assert (false, typeid (inst).toString);	           
     }   
+
+    final protected Array!Expression blocks (Program prg) {
+	Array!Expression fin;
+	foreach (it; prg.begins) {
+	    fin ~= blocks (it);
+	}
+	return fin;
+    }
+    
+
+    final protected bool isTestOp (Word op) {
+	return op == Tokens.INF ||
+	    op == Tokens.INF_EQ ||
+	    op == Tokens.SUP ||
+	    op == Tokens.SUP_EQ ||
+	    op == Tokens.EQUALS ||
+	    op == Tokens.DIFF;
+    }
+    
 }
+
+

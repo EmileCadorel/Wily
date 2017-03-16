@@ -1,9 +1,12 @@
 program p1
 begin
-int x;
-x := 100;
-while (0 + x) do (
-  x := (x - 1) * 6 > 8;
-  x := 1
+int x, y;
+int a, b;
+boolean z;
+x := a + b;
+y := a * b;
+while (y > a + b) do (
+      a := a + 1;
+      x := a + b
 )
 end

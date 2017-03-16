@@ -1,6 +1,6 @@
 module ast.Instruction;
 import syntax.Word;
-
+public import std.outbuffer;
 
 class Instruction {
     
@@ -23,4 +23,8 @@ class Instruction {
     }
     
     void print (int nb = 0) {}
+
+    void prettyPrint (int nb = 0) {}
+    void prettyPrint (OutBuffer buf, int nb = 0) {}
+    
 }

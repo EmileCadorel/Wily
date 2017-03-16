@@ -51,4 +51,44 @@ class Function {
 	foreach (it ; this._insts)
 	    it.print (nb + 4);
     }    
+
+
+    void prettyPrint (int nb = 0) {
+	writefln ("%s%s(", rightJustify ("", nb, ' '), this._id.str);
+	foreach (it ; this._params) {
+	    it.prettyPrint (0);
+	    if (it !is this._params [$ - 1])
+		write (", ");
+	}
+	if (this._ret) {
+	    write (",");
+	    this._ret.prettyPrint (0);
+	}
+	writeln (")(");
+	foreach (it ; this._insts) {
+	    it.prettyPrint (nb + 4);
+	    writeln (";");
+	}
+	writefln ("%s)", rightJustify ("", nb, ' '));
+    }
+    
+    void prettyPrint (OutBuffer buf, int nb = 0) {
+	buf.writefln ("%s%s(", rightJustify ("", nb, ' '), this._id.str);
+	foreach (it ; this._params) {
+	    it.prettyPrint (buf, 0);
+	    if (it !is this._params [$ - 1])
+		buf.write (", ");
+	}
+	if (this._ret) {
+	    buf.write (",");
+	    this._ret.prettyPrint (buf, 0);
+	}
+	buf.writeln (")(");
+	foreach (it ; this._insts) {
+	    it.prettyPrint (buf, nb + 4);
+	    buf.writeln (";");
+	}
+	buf.writefln ("%s)", rightJustify ("", nb, ' '));
+    }
+    
 }
