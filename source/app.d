@@ -11,7 +11,7 @@ void main(string[] args) {
 	}
     	Visitor visitor = new Visitor (args[1]);
     	Program program = visitor.visit ();
-    	program.print ();
+    	program.prettyPrint ();
 
 	auto dVisit = new dispo.Visitor ();
 	auto res = dVisit (program);

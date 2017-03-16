@@ -31,7 +31,7 @@ class Block : Instruction {
 	writefln ("%s(", rightJustify ("", nb, ' '));
 	foreach (it ; this._insts) {
 	    it.prettyPrint (nb + 4);
-	    writefln ("");
+	    writefln (";");
 	}
 	writefln ("%s)", rightJustify ("", nb, ' '));	
     }
@@ -40,7 +40,7 @@ class Block : Instruction {
 	buf.writefln ("%s(", rightJustify ("", nb, ' '));
 	foreach (it ; this._insts) {
 	    it.prettyPrint (buf, nb + 4);
-	    buf, writefln ("");
+	    buf.writefln (";");
 	}
 	buf.writefln ("%s)", rightJustify ("", nb, ' '));	
     }

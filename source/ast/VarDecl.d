@@ -46,21 +46,21 @@ class VarDecl : Instruction {
     }        
 
     override void prettyPrint (int nb = 0) {
-	writef ("%s%s", rightJustify ("", nb, ' '), this._token.str);
+	writef ("%s%s ", rightJustify ("", nb, ' '), this._token.str);
 	foreach (it ; this._names) {
 	    write (it.str);
 	    if (it !is this._names [$ - 1])
-		write (",");	    
+		write (", ");	    
 	}
 	write (";");
     }
 
     override void prettyPrint (OutBuffer buf, int nb = 0) {
-	buf.writef ("%s%s", rightJustify ("", nb, ' '), this._token.str);
+	buf.writef ("%s%s ", rightJustify ("", nb, ' '), this._token.str);
 	foreach (it ; this._names) {
 	    buf.write (it.str);
 	    if (it !is this._names [$ - 1])
-		buf.write (",");	    
+		buf.write (", ");	    
 	}
 	buf.write (";");
     }

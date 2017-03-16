@@ -38,7 +38,7 @@ class While : Instruction {
     override void prettyPrint (int nb = 0) {
 	writef ("%swhile (", rightJustify ("", nb, ' '));
 	this._test.prettyPrint (0);
-	writeln (")");
+	writeln (") do");
 	this._block.prettyPrint (nb);	
     }
 
@@ -46,7 +46,7 @@ class While : Instruction {
     override void prettyPrint (OutBuffer buf, int nb = 0) {
 	buf.writef ("%swhile (", rightJustify ("", nb, ' '));
 	this._test.prettyPrint (buf, 0);
-	buf.writeln (")");
+	buf.writeln (") do");
 	this._block.prettyPrint (buf, nb);	
     }
 

@@ -61,31 +61,46 @@ class Visitor : parent.Visitor {
 	    foreach (it ; entry) {
 		if (equals (_aff.right, it)) {
 		    _aff.right = getParent (it.id, p).left;
-		    break;
+		    return;
 		}
 	    }
+	    change (p, _aff.right, entry);
+	    
 	} else if (auto _bin = cast (Binary) elem) {
+	    bool left = false, right = false;
 	    foreach (it ; entry) {
-		if (equals (_bin.right, it))
+		if (left && right) break;
+		if (equals (_bin.right, it) && !right) {
 		    _bin.right = getParent (it.id, p).left;
+		    right = true;
+		} else if (equals (_bin.left, it) && !left) {
+		    _bin.left = getParent (it.id, p).left;
+		    left = true;
+		}
 	    }
+
+	    if (!left)
+		change (p, _bin.left, entry);
+	    
+	    if (!right)
+		change (p, _bin.right, entry);	    
 	} 
     }
 
     override void analyse (Program p) {
-	write (center ("===entry", 43, '='));
-	writeln (center ("exit", 43, '='));
+	write (" ===", center ("entry", 51, '='));
+	writeln (center ("exit", 51, '='));
 	foreach (it ; blocks (p)) {
 	    Array!Expression entry, exit;
 	    dones.clear ();
 	    entry = AEentry (it, p);
 	    dones.clear ();
-	    //exit = AEexit (it.id, p);
+	    exit = AEexit (it.id, p);
 	    printEEElems (it.id, entry, exit);
 	    change (p, it, entry);
 	}
 	
-	writeln (center ("", 47, '='));
+	writeln (" ===", center ("", 102, '='));
 	p.prettyPrint ();
     }
     
