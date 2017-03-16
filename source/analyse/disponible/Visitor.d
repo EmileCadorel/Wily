@@ -36,8 +36,8 @@ class Visitor : parent.Visitor {
 	}
 	buf2.write ("}");
 	writefln ("|%s|%s|",
-		  center (buf.toString (), 20, ' '),
-		  center (buf2.toString (), 20, ' '));
+		  center (buf.toString (), 50, ' '),
+		  center (buf2.toString (), 50, ' '));
 	
     }
 
@@ -59,9 +59,10 @@ class Visitor : parent.Visitor {
     final private void change (Program p, Expression elem, Array!Expression entry) {
 	if (auto _aff = cast (Affect) elem) {
 	    foreach (it ; entry) {
-		if (equals (_aff.right, it)) 
+		if (equals (_aff.right, it)) {
 		    _aff.right = getParent (it.id, p).left;
-		break;
+		    break;
+		}
 	    }
 	} else if (auto _bin = cast (Binary) elem) {
 	    foreach (it ; entry) {
@@ -72,14 +73,14 @@ class Visitor : parent.Visitor {
     }
 
     override void analyse (Program p) {
-	write (center ("===entry", 23, '='));
-	writeln (center ("exit", 23, '='));
+	write (center ("===entry", 43, '='));
+	writeln (center ("exit", 43, '='));
 	foreach (it ; blocks (p)) {
 	    Array!Expression entry, exit;
 	    dones.clear ();
 	    entry = AEentry (it, p);
 	    dones.clear ();
-	    exit = AEexit (it.id, p);
+	    //exit = AEexit (it.id, p);
 	    printEEElems (it.id, entry, exit);
 	    change (p, it, entry);
 	}
@@ -157,7 +158,8 @@ class Visitor : parent.Visitor {
 	Array!Expression back;
 	foreach (it ; fst) {
 	    foreach (it_ ; scd) {
-		if (it_.id == it.id) back.insertBack (it);
+		if (equals (it, it_)) back.insertBack (it);
+		break;
 	    }
 	}
 	return back;
@@ -168,7 +170,7 @@ class Visitor : parent.Visitor {
 	foreach (it ; fst) {
 	    bool add = true;
 	    foreach (it_ ; scd) {
-		if (it_.id == it.id) {
+		if (equals (it, it_)) {
 		    add = false;
 		    break;
 		}
@@ -185,7 +187,7 @@ class Visitor : parent.Visitor {
 	foreach (it ; fst) {
 	    bool add = true;
 	    foreach (it_ ; scd) {
-		if (it_.id == it.id) {
+		if (equals (it, it_)) {
 		    add = false;
 		    break;
 		}
@@ -198,7 +200,7 @@ class Visitor : parent.Visitor {
     private Array!Expression simplify (Array!Expression elem) {
 	Array!Expression back;
 	foreach (it; elem) {
-	    if (find!("a.id == b.id")(back [], it).empty)
+	    if (find!(function (Expression a, Expression b) => equals (a, b))(back [], it).empty)
 		back.insertBack (it);
 	}
 	return back;
@@ -210,13 +212,19 @@ class Visitor : parent.Visitor {
 	} else {
 	    Array!(Array!Expression) toInter;
 	    auto f = flow (p);
+	    Array!ulong toDo;
 	    foreach (it ; f) {
 		if (it [1] == current.id && find (dones [], it [0]).empty) {
-		    dones.insertBack (it [0]);
-		    toInter.insertBack (AEexit (it [0], p));
+		    toDo.insertBack (it [0]);
 		}
 	    }
 
+	    dones.insertBack (current.id);
+	    
+	    foreach (it ; toDo) {
+		toInter.insertBack (AEexit (it, p));
+	    }
+	    
 	    while (toInter.length > 1) {
 		auto back  = intersect (toInter [$ - 1], toInter [$ - 2]);
 		toInter.removeBack ();
@@ -224,8 +232,9 @@ class Visitor : parent.Visitor {
 		toInter.insertBack (back);
 	    }
 	    
-	    if (toInter.length != 0)    
+	    if (toInter.length != 0) {
 		return toInter [$ - 1];
+	    }
 	    else return make!(Array!Expression);
 	}
     }
@@ -294,7 +303,6 @@ class Visitor : parent.Visitor {
 	    entry = sub (entry, kill);
 	    entry = add (entry, gen);
 	    entry = simplify (entry);
-	    break;
 	}
 	return entry;
     }
