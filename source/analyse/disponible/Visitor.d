@@ -12,7 +12,7 @@ import std.typecons;
 
 class Visitor : parent.Visitor {
     
-    private Array!ulong dones;    
+    private static Array!ulong dones;    
     
     private void printEEElems (ulong id, Array!Expression entry, Array!Expression exit) {
 	writef ("|%s", center (to!string (id), 3, ' '));
@@ -88,23 +88,41 @@ class Visitor : parent.Visitor {
     }
 
     override void analyse (Program p) {
-	write (" ===", center ("entry", 51, '='));
-	writeln (center ("exit", 51, '='));
-	foreach (it ; blocks (p)) {
-	    Array!Expression entry, exit;
-	    dones.clear ();
-	    entry = AEentry (it, p);
-	    dones.clear ();
-	    exit = AEexit (it.id, p);
-	    printEEElems (it.id, entry, exit);
-	    change (p, it, entry);
-	}
+	import analyse.MFPEntry;
+	MFPEntry!Expression mfp_entry;
+	mfp_entry.F = flow (p);
+	mfp_entry.E = make!(Array!ulong) (init (p));
+	mfp_entry.not = make!(Array!Expression) ([null]);
+	mfp_entry.extr = make!(Array!Expression) ();
+	mfp_entry.S = p;
+	
+	mfp_entry.inside = function (Array!Expression left, Array!Expression right) {
+	    if (right.length == 1 && right [0] is null)  return false;
+	    foreach (it ; right) {
+		if (find(left [], it).empty) return false;
+	    }
+	    return true;
+	};
+
+	mfp_entry.fl = function (ulong id, Program p) {
+	    return AEexit (id, p);
+	};
+	
+	mfp_entry.joint = function (Array!Expression left, Array!Expression right) {
+	    if (right.length == 1 && right [0] is null) return left;
+	    return intersect (left, right);
+	};
+	
+	auto res = MFP (mfp_entry);
+	foreach (it, value ; res [0]) {
+	    change (p, cast (Expression) (get (it, p)), value);
+	}    
 	
 	writeln (" ===", center ("", 102, '='));
 	p.prettyPrint ();
     }
     
-    private Array!Expression AExp (Instruction inst) {
+    static Array!Expression AExp (Instruction inst) {
 	if (auto _if = cast (If) inst) {	    
 	    auto ret = AExp (_if.test) ~ AExp (_if.block);
 	    if (_if.else_) ret ~= AExp (_if.else_.block);
@@ -122,7 +140,7 @@ class Visitor : parent.Visitor {
 	else return make!(Array!Expression);
     }
     
-    private Array!Expression AExp (Program p) {
+    static Array!Expression AExp (Program p) {
 	Array!Expression ret;
 	foreach (it ; p.begins) {
 	    ret ~= AExp (it);
@@ -130,18 +148,7 @@ class Visitor : parent.Visitor {
 	return ret;
     }
     
-    private Array!Var FV (Expression expr) {
-	if (auto _aff = cast (Affect) expr) {
-	    return FV (_aff.right);
-	} else if (auto _bin = cast (Binary) expr) {
-	    return FV (_bin.left) ~ FV (_bin.right);
-	} else if (auto _var = cast (Var) expr) {
-	    return make!(Array!Var) (_var);
-	}
-	return make!(Array!Var);
-    }
-
-    private Array!Expression killAE (Expression expr, Program p) {
+    static Array!Expression killAE (Expression expr, Program p) {
 	if (auto _aff = cast (Affect) expr) {
 	    auto aexp = AExp (p);
 	    Array!Expression ret;
@@ -156,7 +163,7 @@ class Visitor : parent.Visitor {
 	} else return make!(Array!Expression);
     }
 
-    private Array!Expression genAE (Expression expr, Program p) {
+    static Array!Expression genAE (Expression expr, Program p) {
 	if (auto _aff = cast (Affect) expr) {
 	    auto aexp = AExp (_aff.right);
 	    Array!Expression ret;
@@ -168,60 +175,13 @@ class Visitor : parent.Visitor {
 	    return ret;	    
 	} else	return AExp (expr);	
     }
-    
-    private Array!Expression intersect (Array!Expression fst, Array!Expression scd) {
-	Array!Expression back;
-	foreach (it ; fst) {
-	    foreach (it_ ; scd) {
-		if (equals (it, it_)) back.insertBack (it);
-		break;
-	    }
-	}
-	return back;
-    }    
 
-    private Array!Expression sub (Array!Expression fst, Array!Expression scd) {
-	Array!Expression back;
-	foreach (it ; fst) {
-	    bool add = true;
-	    foreach (it_ ; scd) {
-		if (equals (it, it_)) {
-		    add = false;
-		    break;
-		}
-	    }
-	    if (add) back.insertBack (it);
-	    
-	}
-	return back;
+    static Array!Expression AEentry (Instruction current, Program p) {
+	dones.clear ();
+	return AEentry2 (current, p);
     }
     
-    private Array!Expression add (Array!Expression fst, Array!Expression scd) {
-	Array!Expression back;
-	foreach (it ; scd) back.insertBack (it);
-	foreach (it ; fst) {
-	    bool add = true;
-	    foreach (it_ ; scd) {
-		if (equals (it, it_)) {
-		    add = false;
-		    break;
-		}
-	    }
-	    if (add) back.insertBack (it);	    
-	}
-	return back;    
-    }
-
-    private Array!Expression simplify (Array!Expression elem) {
-	Array!Expression back;
-	foreach (it; elem) {
-	    if (find!(function (Expression a, Expression b) => equals (a, b))(back [], it).empty)
-		back.insertBack (it);
-	}
-	return back;
-    }    
-    
-    private Array!Expression AEentry (Instruction current, Program p) {
+    static Array!Expression AEentry2 (Instruction current, Program p) {
 	if (current.id == init (p.begins [0])) {
 	    return make!(Array!Expression);
 	} else {
@@ -237,7 +197,7 @@ class Visitor : parent.Visitor {
 	    dones.insertBack (current.id);
 	    
 	    foreach (it ; toDo) {
-		toInter.insertBack (AEexit (it, p));
+		toInter.insertBack (AEexit2 (it, p));
 	    }
 	    
 	    while (toInter.length > 1) {
@@ -254,27 +214,8 @@ class Visitor : parent.Visitor {
 	}
     }
 
-    private Instruction get (ulong id, Instruction inst) {
-	if (auto _if = cast (If) inst) {
-	    if (_if.test.id == id) return _if.test;
-	    if (auto it = get (id, _if.block)) return it;
-	    if (_if.else_)
-		if (auto it = get (id, _if.else_.block)) return it;
-	    return null;
-	} else if (auto _wh = cast (While) inst) {
-	    if (_wh.test.id == id) return _wh.test;
-	    return get (id, _wh.block);
-	} else if (auto _bl = cast (Block) inst) {
-	    foreach (it ; _bl.insts) {
-		if (it.id == id) return it;
-		else if (auto ins = get (id, it)) return ins;
-	    }
-	    return null;
-	}  else return null;
-    }
-
     
-    private Affect getParent (ulong id, Instruction inst) {
+    static Affect getParent (ulong id, Instruction inst) {
 	if (auto _if = cast (If) inst) {
 	    if (auto it = getParent (id, _if.block)) return it;
 	    if (_if.else_)
@@ -293,24 +234,21 @@ class Visitor : parent.Visitor {
 	} else return null;
     }
    
-    private Affect getParent (ulong id, Program p) {
+    static Affect getParent (ulong id, Program p) {
 	foreach (it ; p.begins) {
 	    if (auto inst = getParent (id, it)) return inst;
 	}
 	return null;
     }
-
-    private Instruction get (ulong id, Program p) {
-	foreach (it ; p.begins) {
-	    if (it.id == id) return it;
-	    else if (auto inst = get (id, it)) return inst;
-	}
-	return null;
-    }
  
-    private Array!Expression AEexit (ulong id, Program p) {
+    static Array!Expression AEexit (ulong id, Program p) {
+	dones.clear ();
+	return AEexit2 (id, p);
+    }
+
+    static Array!Expression AEexit2 (ulong id, Program p) {
 	auto inst = get (id, p);
-	auto entry = AEentry (inst, p);
+	auto entry = AEentry2 (inst, p);
 	auto bls = blocks (inst);
 	foreach (it ; bls) {
 	    auto kill = killAE (it, p);

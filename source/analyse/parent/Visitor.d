@@ -5,6 +5,17 @@ import tables.Symbol;
 import std.typecons;
 import syntax.Word;
 import syntax.Tokens;
+import analyse.MFPEntry;
+import std.stdio;
+import std.string;
+import std.math, std.algorithm;
+import analyse.valide.Visitor;
+import ast.Constante;
+
+alias Pair = Tuple!(ulong, ulong);    
+
+alias Location = Tuple!(Var, "v", long, "l"); 
+
 
 /++
 + Ancetre des visiteur des autres analyse statique
@@ -61,6 +72,10 @@ class Visitor {
 	return left.token.str == right.token.str;
     }    
     
+    final static bool equals (Location left, Location right) {
+	return left.v.token.str == right.v.token.str && right.l == left.l;
+    }	
+   
     final static bool contain (Expression where, Expression what) {
 	if (auto _aff = cast (Affect) where) return containInAffect (_aff, what);
 	else if (auto _bin = cast (Binary) where) return containInBinary (_bin, what);
@@ -91,14 +106,18 @@ class Visitor {
     }
 
 
-    final protected ulong init (Instruction inst) {
+    final static ulong init (Program p) {
+	return init (p.begins [0]);
+    }
+    
+    final static ulong init (Instruction inst) {
 	if (auto _if = cast (If) inst) return _if.test.id;
 	else if (auto _wh = cast (While) inst) return _wh.test.id;
 	else if (auto _bl = cast (Block) inst) return init(_bl.insts [0]);
 	return inst.id;
     }
 
-    final protected Array!ulong final_ (Instruction inst) {
+    final static Array!ulong final_ (Instruction inst) {
 	if (cast (Expression) inst) return make!(Array!ulong) (inst.id);
 	else if (cast (Skip) inst) return make!(Array!ulong) (inst.id);
 	else if (auto _if = cast (If) inst) {
@@ -114,7 +133,7 @@ class Visitor {
 	} else assert (false, typeid (inst).toString);
     }
 
-    final protected Array!ulong labels (Instruction inst) {
+    final static Array!ulong labels (Instruction inst) {
 	if (cast (Expression) inst) return make!(Array!ulong)(inst.id);
 	else if (cast (Skip) inst) return make!(Array!ulong) (inst.id);
 	else if (auto _if = cast (If) inst) {
@@ -133,8 +152,8 @@ class Visitor {
 	} else assert (false, typeid (inst).toString);		
     }
 
-    alias Pair = Tuple!(ulong, ulong);    
-    final protected Array!(Pair) flow (Instruction inst) {
+
+    final static Array!(Pair) flow (Instruction inst) {
 	if (cast (Expression) inst) return make!(Array!Pair);
 	else if (cast (Skip) inst) return make!(Array!Pair);
 	else if (auto _bl = cast (Block) inst) {
@@ -173,7 +192,7 @@ class Visitor {
 	} else assert (false, typeid (inst).toString);
     }
 
-    final protected Array!Pair flow (Program p) {
+    final static Array!Pair flow (Program p) {
 	Array!Pair fin;
 	if (p.begins.length > 1) {
 	    foreach (it ; 0 .. p.begins.length - 1) {
@@ -190,7 +209,7 @@ class Visitor {
 	else return make!(Array!Pair);
     }
     
-    final protected Array!Expression blocks (Instruction inst) {
+    final static Array!Expression blocks (Instruction inst) {
 	if (auto _exp = cast (Expression) inst) return make!(Array!Expression) (_exp);
 	else if (auto _sk = cast (Skip) inst) return make!(Array!Expression);
 	else if (auto _bl = cast (Block) inst) {
@@ -208,16 +227,248 @@ class Visitor {
 	} else assert (false, typeid (inst).toString);	           
     }   
 
-    final protected Array!Expression blocks (Program prg) {
+    final static Array!Expression blocks (Program prg) {
 	Array!Expression fin;
 	foreach (it; prg.begins) {
 	    fin ~= blocks (it);
 	}
 	return fin;
     }
-    
 
-    final protected bool isTestOp (Word op) {
+
+    static void print (Array!Expression elems) {
+	auto buf2 = new OutBuffer ();
+	buf2.write ("{");
+	foreach (it ; elems) {
+	    if (it is null) { buf2.writef ("T"); break; }
+	    buf2.writef ("%d:", it.id);
+	    it.prettyPrint (buf2);
+	    if (it !is elems [$ - 1])
+		buf2.write (", ");
+	}
+	buf2.write ("}");
+	writef ("|%s|",
+		  center (buf2.toString (), 32, ' '));
+    }
+
+    static void print (Array!Location elems) {
+	auto buf2 = new OutBuffer ();
+	buf2.write ("{");
+	foreach (it ; elems) {
+	    if (it.v is null) { buf2.writef ("T"); break; }
+	    buf2.write ("(");
+	    it.v.prettyPrint (buf2);
+	    buf2.writef (":%d)", it.l);
+	    if (it !is elems [$ - 1])
+		buf2.write (", ");
+	}
+	buf2.write ("}");
+	writef ("|%s|",
+		  center (buf2.toString (), 32, ' '));
+    }
+
+
+    
+    static Array!Expression FV (Program p) {
+	Array!Expression v;
+	foreach (it ; blocks (p)) {
+	    v ~= FV (it);
+	}
+	return v;
+    }
+    
+    static Array!Var FV (Expression expr) {
+	if (auto _aff = cast (Affect) expr) {
+	    return FV (_aff.right);
+	} else if (auto _bin = cast (Binary) expr) {
+	    return FV (_bin.left) ~ FV (_bin.right);
+	} else if (auto _var = cast (Var) expr) {
+	    return make!(Array!Var) (_var);
+	}
+	return make!(Array!Var);
+    }
+
+    
+    final static void printAnalysisHead (T) (Array!(T) [ulong] Analysis, SList!Pair W) {	
+	foreach (it, value ; Analysis) {
+	    writef ("|%s|", center (to!string (it), 32, ' '), " ");
+	}
+	writeln ("");
+	foreach (it, value; Analysis) {
+	    print (value);
+	}
+	write ('[');
+	foreach (it ; W) {
+	    write (it [0], ',', it [1], " ");
+	}
+	writeln ("]");
+    }    
+
+    
+    final static void printAnalysis (T) (Array!(T) [ulong] Analysis, SList!Pair W) {
+	foreach (it, value; Analysis) {
+	    print (value);
+	}
+	write ('[');
+	foreach (it ; W) {
+	    write (it [0], ',', it [1], " ");
+	}
+	writeln ("]");
+    }    
+    
+    final static auto MFP (T)(MFPEntry!T params) {
+	SList!Pair W;
+	foreach (it; params.F) {
+	    W.insertFront (it);
+	}
+
+	Array!(T) [ulong] Analysis;
+	
+	foreach (it; params.F) {	    
+	    if (!find (params.E [], it [0]).empty) {
+		Analysis [it [0]] = params.extr;
+	    } else {		
+		Analysis [it [0]] = (params.not);
+	    }
+
+	    if (!find (params.E [], it [1]).empty) {
+		Analysis [it [1]] = params.extr;
+	    } else {
+		Analysis [it [1]] = (params.not);
+	    }	    
+	}
+
+	foreach (it ; params.E) {
+	    Analysis [it] = params.extr;
+	}
+
+	printAnalysisHead (Analysis, W);
+	
+	while (!W.empty) {
+	    auto head = W.front;
+	    W.removeFront ();
+	    auto fl = params.fl (head [0], params.S);
+	    if (!params.inside (fl, Analysis [head [1]])) {		
+		Analysis [head [1]] = params.joint (fl, Analysis [head [1]]);
+		foreach (w ; params.F) {
+		    if (w [0] == head [1]) {
+			W.insertFront (w);
+		    }
+		}
+	    }
+	    printAnalysis (Analysis, W);
+	}
+	
+	return ResultatMFP (Analysis, params);
+    }
+
+
+    
+    final static auto ResultatMFP (T) (Array!(T) [ulong] Analysis, MFPEntry!T params) {
+	alias Tuple!(Array!(T) [ulong], Array!(T) [ulong]) Result;
+	Array!(T) [ulong] MFPB;
+	Array!(T) [ulong] MFPW;
+	
+	foreach (it ; params.F) {
+	    MFPW [it [0]] = Analysis [it [0]];
+	    MFPW [it [1]] = Analysis [it [1]];
+
+	    MFPB [it [0]] = params.fl (it [0], params.S);
+	    MFPB [it [1]] = params.fl (it [1], params.S);
+	}
+
+	foreach (it ; params.E) {
+	    MFPW [it] = Analysis [it];
+	    MFPB [it] = params.fl (it, params.S);
+	}
+	
+	return Result (MFPW, MFPB);
+    }    
+
+
+    
+    static Array!T intersect (T) (Array!T fst, Array!T scd) {
+	Array!T back;
+	foreach (it ; fst) {
+	    foreach (it_ ; scd) {
+		if (equals (it, it_)) back.insertBack (it);
+		break;
+	    }
+	}
+	return back;
+    }    
+
+    static Array!T sub (T) (Array!T fst, Array!T scd) {
+	Array!T back;
+	foreach (it ; fst) {
+	    bool add = true;
+	    foreach (it_ ; scd) {
+		if (equals (it, it_)) {
+		    add = false;
+		    break;
+		}
+	    }
+	    if (add) back.insertBack (it);
+	    
+	}
+	return back;
+    }
+    
+    static Array!T add (T) (Array!T fst, Array!T scd) {
+	Array!T back;
+	foreach (it ; scd) back.insertBack (it);
+	foreach (it ; fst) {
+	    bool add = true;
+	    foreach (it_ ; scd) {
+		if (equals (it, it_)) {
+		    add = false;
+		    break;
+		}
+	    }
+	    if (add) back.insertBack (it);	    
+	}
+	return back;    
+    }
+
+    static Array!T simplify (T) (Array!T elem) {
+	Array!T back;
+	foreach (it; elem) {
+	    if (find!(function (T a, T b) => equals (a, b))(back [], it).empty)
+		back.insertBack (it);
+	}
+	return back;
+    }    
+
+    
+    static Instruction get (ulong id, Instruction inst) {
+	if (auto _if = cast (If) inst) {
+	    if (_if.test.id == id) return _if.test;
+	    if (auto it = get (id, _if.block)) return it;
+	    if (_if.else_)
+		if (auto it = get (id, _if.else_.block)) return it;
+	    return null;
+	} else if (auto _wh = cast (While) inst) {
+	    if (_wh.test.id == id) return _wh.test;
+	    return get (id, _wh.block);
+	} else if (auto _bl = cast (Block) inst) {
+	    foreach (it ; _bl.insts) {
+		if (it.id == id) return it;
+		else if (auto ins = get (id, it)) return ins;
+	    }
+	    return null;
+	}  else return null;
+    }
+
+    static Instruction get (ulong id, Program p) {
+	foreach (it ; p.begins) {
+	    if (it.id == id) return it;
+	    else if (auto inst = get (id, it)) return inst;
+	}
+	return null;
+    }
+
+    
+    final static bool isTestOp (Word op) {
 	return op == Tokens.INF ||
 	    op == Tokens.INF_EQ ||
 	    op == Tokens.SUP ||

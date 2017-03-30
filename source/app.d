@@ -3,6 +3,7 @@ import syntax.Visitor;
 import ast.Program;
 import utils.WilyException;
 import dispo = analyse.disponible.Visitor;
+import valide = analyse.valide.Visitor;
 
 void main(string[] args) {
     try {
@@ -11,10 +12,13 @@ void main(string[] args) {
 	}
     	Visitor visitor = new Visitor (args[1]);
     	Program program = visitor.visit ();
-    	program.prettyPrint ();
+    	program.print ();
 
 	auto dVisit = new dispo.Visitor ();
 	auto res = dVisit (program);
+
+	auto vVisit = new valide.Visitor ();
+	 res = vVisit (program);
 	
     } catch (WilyException e) {
     	writeln (e);
